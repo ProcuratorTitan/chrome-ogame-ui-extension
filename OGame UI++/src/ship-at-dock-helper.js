@@ -1,4 +1,5 @@
 'use strict';
+
 window.uipp_getShipResources = function (ships) {
   var shipResources = {
     204: [3000, 1000, 0], // lf
@@ -16,7 +17,7 @@ window.uipp_getShipResources = function (ships) {
     203: [6000, 6000, 0], // large cargo
     208: [10000, 20000, 10000], // colony ship
     209: [10000, 6000, 2000], // recycler
-    210: [0, 1000, 0] // spy sat
+    210: [0, 1000, 0] // spy sat?page=ingame&component=fleetdispatch
   };
 
   var currentShipResources = [0, 0, 0];
@@ -85,24 +86,72 @@ function _parseCurrentPlanetShips() {
     return;
   }
 
-  var shipsAtDock = {
-    204: Number($('.fighterLight .amount').attr('data-value')) || 0,
-    205: Number($('.fighterHeavy .amount').attr('data-value')) || 0,
-    206: Number($('.cruiser .amount').attr('data-value')) || 0,
-    207: Number($('.battleship .amount').attr('data-value')) || 0,
-    215: Number($('.interceptor .amount').attr('data-value')) || 0,
-    211: Number($('.bomber .amount').attr('data-value')) || 0,
-    213: Number($('.destroyer .amount').attr('data-value')) || 0,
-    214: Number($('.deathstar .amount').attr('data-value')) || 0,
-    218: Number($('.reaper .amount').attr('data-value')) || 0,
-    219: Number($('.explorer .amount').attr('data-value')) || 0,
-
-    202: Number($('.transporterSmall .amount').attr('data-value')) || 0,
-    203: Number($('.transporterLarge .amount').attr('data-value')) || 0,
-    208: Number($('.colonyShip .amount').attr('data-value')) || 0,
-    209: Number($('.recycler .amount').attr('data-value')) || 0,
-    210: Number($('.espionageProbe .amount').attr('data-value')) || 0
+  // Mappa che associa gli ID delle navi ai loro nomi (puoi usare i nomi che preferisci)
+  const shipIdMap = {
+    204: 'fighterLight',
+    205: 'fighterHeavy',
+    206: 'cruiser',
+    207: 'battleship',
+    215: 'interceptor',
+    211: 'bomber',
+    213: 'destroyer',
+    214: 'deathstar',
+    218: 'reaper',
+    219: 'explorer',
+    202: 'transporterSmall',
+    203: 'transporterLarge',
+    208: 'colonyShip',
+    209: 'recycler',
+    210: 'espionageProbe'
   };
+
+  const shipsAtDock = {};
+
+  // Selettore per tutte le navi visibili, sia militari che civili
+  const shipElements = $('#military .technology, #civil .technology');
+
+  shipElements.each(function() {
+    const $shipElement = $(this);
+    const shipId = Number($shipElement.attr('data-technology'));
+
+    // Verifica se l'ID della nave è valido
+    if (!shipIdMap.hasOwnProperty(shipId)) {
+      console.warn(`Unknown ship ID: ${shipId}`);
+      return; // Passa alla prossima nave
+    }
+
+    // Estrae la quantità di navi
+    let amount = 0;
+    const amountElement = $shipElement.find('.amount');
+
+    // Caso 1: La quantità è nell'elemento .amount (come per la maggior parte delle navi)
+    if (amountElement.length) {
+      amount = Number(amountElement.attr('data-value'));
+    } 
+    // Caso 2: La quantità è nel tooltip data-tooltip-title (come per transporterSmall e transporterLarge)
+    else {
+      const tooltipTitle = $shipElement.attr('data-tooltip-title');
+      const amountMatch = tooltipTitle.match(/Amount : <b>([\d.]+)<\/b>/); // Cerca "Amount : <b>...</b>"
+      if (amountMatch) {
+        amount = Number(amountMatch[1].replace('.', '')); // Estrae il numero e rimuove i punti
+      }
+    }
+
+    // Gestisce eventuali errori di conversione in numero
+    if (isNaN(amount)) {
+      console.error(`Invalid amount for ship ID ${shipId}: ${amountElement.length ? amountElement.attr('data-value') : $shipElement.attr('data-tooltip-title')}`);
+      amount = 0;
+    }
+
+    shipsAtDock[shipId] = amount;
+  });
+
+  // Imposta a 0 le navi non trovate nell'HTML, per completezza
+  for (const shipId in shipIdMap) {
+    if (!shipsAtDock.hasOwnProperty(shipId)) {
+      shipsAtDock[shipId] = 0;
+    }
+  }
 
   var currentPlanetCoordinatesStr = '[' + window._getCurrentPlanetCoordinates().join(':') + ']';
   if ($('meta[name=ogame-planet-type]').attr('content') === 'moon') {
@@ -121,24 +170,49 @@ function _parseCurrentPlanetShips() {
 
 function _addPlanetListHelpers() {
   var threshold = window.config.shipsAtDockThreshold;
-  if (threshold <= 1) {
+  if (threshold <= 0) {
     threshold *= Number(
       ((window.config.players || {})[$('[name=ogame-player-id]').attr('content')] || {}).militaryScore || '0'
     );
   }
 
+  // Debug: Aggiungi il frammento di analisi qui
+    $('#planetList > div').each(function () {
+      const planetCoords = $(this).find('.planet-koords').text();
+      const planet = config.my.planets[planetCoords] || {};
+      const shipPoints = planet.shipPoints || 0;
+      const shipsNeedUpdate = planet.shipsNeedUpdate && planet.shipsNeedUpdate <= Date.now();
+
+      if (shipPoints > threshold || shipsNeedUpdate) {
+      } else {
+      }
+  });
+
   $('.shipsatdockhelper').remove();
-  $('#planetList > div').each(function () {
-    var planet = window.config.my.planets[$(this).find('.planet-koords').text()] || {};
+
+  // Iteriamo direttamente sugli elementi con .planetlink
+  $('#planetList').find('.planetlink').each(function () {
+    var $planetDiv = $(this).closest('.smallplanet'); // risali all'elemento del pianeta
+    var planetCoords = $planetDiv.find('.planet-koords').text();
+    var planet = window.config.my.planets[planetCoords] || {};
     var shipPoints = planet.shipPoints || 0;
-    var cp = $(this).find('.planetlink').attr('href').split('cp=')[1];
-    var shipsNeedUpdate = planet.shipsNeedUpdate <= Date.now();
+
+    var planetLink = $(this).attr('href');
+    if (!planetLink) {
+      return; // Nessun href, salto
+    }
+    var cpParts = planetLink.split('cp=');
+    if (cpParts.length < 2) {
+      return; // Nessun cp= trovato, salto
+    }
+    var cp = cpParts[1];
+
+    var shipsNeedUpdate = planet.shipsNeedUpdate && planet.shipsNeedUpdate <= Date.now();
 
     if (shipPoints > threshold || shipsNeedUpdate) {
       var img = uipp_images.atk;
       var tooltip = window._translate('SHIP_AT_DOCK') + ' : ' + _num(shipPoints * 1000) + '|';
-      tooltip +=
-        window._translate('LAST_UPDATE') + ' : ' + _time((Date.now() - planet.shipsLastUpdate) / 1000) + '<br><br>';
+      tooltip += window._translate('LAST_UPDATE') + ' : ' + _time((Date.now() - planet.shipsLastUpdate) / 1000) + '<br><br>';
       tooltip += '<table class=&quot;marketitem_price_tooltip&quot;>';
       for (var key in planet.ships) {
         tooltip += [
@@ -152,13 +226,12 @@ function _addPlanetListHelpers() {
 
       if (shipsNeedUpdate) {
         tooltip = window._translate('SHIP_AT_DOCK') + ' : ???|';
-        tooltip +=
-          window._translate('LAST_UPDATE') + ' : ' + _time((Date.now() - planet.shipsLastUpdate) / 1000) + '<br><br>';
+        tooltip += window._translate('LAST_UPDATE') + ' : ' + _time((Date.now() - planet.shipsLastUpdate) / 1000) + '<br><br>';
         tooltip += window._translate('SHIP_AT_DOCK_THRESHOLD_NEED_UPDATE');
         img = uipp_images.atkunk;
       }
 
-      $(this).append(
+      $planetDiv.append(
         [
           '<a class="shipsatdockhelper" href="?page=ingame&component=fleetdispatch&cp=' + cp + '">',
           '<img src="' +
@@ -171,61 +244,67 @@ function _addPlanetListHelpers() {
       );
     }
 
-    if ($(this).find('.moonlink').length) {
-      var myPlanet = window.config.my.planets[$(this).find('.planet-koords').text() + 'L'];
-      var shipPointsMoon = myPlanet.shipPoints || 0;
-      var cpMoon = $(this).find('.moonlink').attr('href').split('cp=')[1];
-      var shipsNeedUpdateMoon = myPlanet.shipsNeedUpdate <= Date.now();
+    // Gestione luna, se presente
+    var $moonLink = $planetDiv.find('.moonlink');
+    if ($moonLink.length) {
+      var moonCoords = planetCoords + 'L';
+      var myPlanetMoon = window.config.my.planets[moonCoords] || {};
+      var shipPointsMoon = myPlanetMoon.shipPoints || 0;
+
+      var moonLinkHref = $moonLink.attr('href');
+      if (!moonLinkHref) {
+        return; // Nessun href per la luna
+      }
+      var moonParts = moonLinkHref.split('cp=');
+      if (moonParts.length < 2) {
+        return; // Nessun cp= nella luna
+      }
+      var cpMoon = moonParts[1];
+
+      var shipsNeedUpdateMoon = myPlanetMoon.shipsNeedUpdate <= Date.now();
 
       if (shipPointsMoon > threshold || shipsNeedUpdateMoon) {
-        var tooltip = window._translate('SHIP_AT_DOCK') + ' : ' + _num(shipPointsMoon * 1000) + '|';
-        var img = uipp_images.atk;
-        if (myPlanet.shipResources) {
-          tooltip += "<figure class='tf planetIcon'></figure> ";
-          tooltip += window.uipp_scoreHumanReadable(config.universe.debrisFactor * myPlanet.shipResources[0]);
-          tooltip += ' / ';
-          tooltip += window.uipp_scoreHumanReadable(config.universe.debrisFactor * myPlanet.shipResources[1]);
-          tooltip += ' / 0<br><br>';
+        var imgMoon = uipp_images.atk;
+        var tooltipMoon = window._translate('SHIP_AT_DOCK') + ' : ' + _num(shipPointsMoon * 1000) + '|';
+        if (myPlanetMoon.shipResources) {
+          tooltipMoon += "<figure class='tf planetIcon'></figure> ";
+          tooltipMoon += window.uipp_scoreHumanReadable(config.universe.debrisFactor * myPlanetMoon.shipResources[0]);
+          tooltipMoon += ' / ';
+          tooltipMoon += window.uipp_scoreHumanReadable(config.universe.debrisFactor * myPlanetMoon.shipResources[1]);
+          tooltipMoon += ' / 0<br><br>';
         }
-        tooltip +=
-          window._translate('LAST_UPDATE') +
+        tooltipMoon += window._translate('LAST_UPDATE') +
           ' : ' +
-          _time(
-            (Date.now() - window.config.my.planets[$(this).find('.planet-koords').text() + 'L'].shipsLastUpdate) / 1000
-          ) +
+          _time((Date.now() - myPlanetMoon.shipsLastUpdate) / 1000) +
           '<br><br>';
-        tooltip += '<table class=&quot;marketitem_price_tooltip&quot;>';
-        for (var key in window.config.my.planets[$(this).find('.planet-koords').text() + 'L'].ships) {
-          tooltip += [
+        tooltipMoon += '<table class=&quot;marketitem_price_tooltip&quot;>';
+        for (var k in myPlanetMoon.ships) {
+          tooltipMoon += [
             '<tr>',
-            '<th>' + window.config.labels[key] + '</th>',
-            '<td>' + window.config.my.planets[$(this).find('.planet-koords').text() + 'L'].ships[key] + '</td>',
+            '<th>' + window.config.labels[k] + '</th>',
+            '<td>' + myPlanetMoon.ships[k] + '</td>',
             '</tr>'
           ].join('');
         }
-        tooltip += '</table>';
+        tooltipMoon += '</table>';
 
         if (shipsNeedUpdateMoon) {
-          tooltip = window._translate('SHIP_AT_DOCK') + ' : ???|';
-          tooltip +=
-            window._translate('LAST_UPDATE') +
+          tooltipMoon = window._translate('SHIP_AT_DOCK') + ' : ???|';
+          tooltipMoon += window._translate('LAST_UPDATE') +
             ' : ' +
-            _time(
-              (Date.now() - window.config.my.planets[$(this).find('.planet-koords').text() + 'L'].shipsLastUpdate) /
-                1000
-            ) +
+            _time((Date.now() - myPlanetMoon.shipsLastUpdate) / 1000) +
             '<br><br>';
-          tooltip += window._translate('SHIP_AT_DOCK_THRESHOLD_NEED_UPDATE');
-          img = uipp_images.atkunk;
+          tooltipMoon += window._translate('SHIP_AT_DOCK_THRESHOLD_NEED_UPDATE');
+          imgMoon = uipp_images.atkunk;
         }
 
-        $(this).append(
+        $planetDiv.append(
           [
             '<a class="shipsatdockhelper" href="?page=ingame&component=fleetdispatch&cp=' + cpMoon + '">',
             '<img src="' +
-              img +
+              imgMoon +
               '" class="tooltipHTML" title="' +
-              tooltip +
+              tooltipMoon +
               '" style="position: absolute; bottom: 5px; left: 19px; height: 15px; width: 15px;"/>',
             '</a>'
           ].join('')
@@ -241,7 +320,6 @@ function _handleMissionsInProg() {
     var $tooltip = $($(this).attr('title'));
     var $tr = $(this).parent().parent();
 
-    var trCount = $tooltip.find('tr').length;
     var entry = {
       id: Number($tr.attr('id').replace('eventRow-', '')),
       type: Number($tr.attr('data-mission-type')),
@@ -254,6 +332,7 @@ function _handleMissionsInProg() {
     };
 
     if (entry.returnMission) {
+      // Se è un viaggio di ritorno, invertiamo origine e destinazione
       var to = entry.to;
       entry.to = entry.from;
       entry.from = to;
@@ -272,10 +351,8 @@ function _handleMissionsInProg() {
         toCoords = m.from + (m.fromMoon ? 'L' : '');
       }
 
-      // don't put the need for update at a later date
       if (config.my.planets[toCoords] && m.t > config.my.planets[toCoords].shipsNeedUpdate) return;
 
-      // update values
       if (config.my.planets[toCoords] && config.my.planets[toCoords].shipsNeedUpdate != m.t) {
         config.my.planets[toCoords].shipsNeedUpdate = m.t;
         setTimeout(_addPlanetListHelpers, m.t - Date.now() + 1000);
