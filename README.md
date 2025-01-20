@@ -3,6 +3,7 @@
 A Google Chrome extension that enhances the OGame interface by adding elements and menu entries.
 
 Available in-game languages :
+ - :it: Italian
  - :gb: English
  - :fr: French
  - :es: Spanish
