@@ -8,17 +8,40 @@ window._parseResearchTab = function _parseResearchTab() {
     return;
   }
 
-  window.config.combustionDrive = Number($('.combustionDriveTechnology.small .level').text().match(/\d+/g)[0]);
-  window.config.impulseDrive = Number($('.impulseDriveTechnology.small .level').text().match(/\d+/g)[0]);
-  window.config.hyperspaceDrive = Number($('.hyperspaceDriveTechnology.small .level').text().match(/\d+/g)[0]);
-  window.config.plasmaTech = Number($('.plasmaTechnology.small .level').text().match(/\d+/g)[0]);
-  window.config.astroTech = Number($('.astrophysicsTechnology.small .level').text().match(/\d+/g)[0]);
-  window.config.computerTech = Number($('.computerTechnology.small .level').text().match(/\d+/g)[0]);
-  window.config.hyperspaceTech = Number($('.hyperspaceTechnology.small .level').text().match(/\d+/g)[0]);
-  window.config.energyTech = Number($('.energyTechnology.small .level').text().match(/\d+/g)[0]);
-  window.config.espionageTech = Number($('.espionageTechnology.small .level').text().match(/\d+/g)[0]);
-  window.config.laserTech = Number($('.laserTechnology.small .level').text().match(/\d+/g)[0]);
-  window.config.ionTech = Number($('.ionTechnology.small .level').text().match(/\d+/g)[0]);
+  const getLevel = (selector) => {
+    const $element = $(selector);
+    if ($element.length === 0) {
+      console.warn(`Element not found for selector: ${selector}`);
+      return 0;
+    }
+
+    // Prova a ottenere il livello dall'attributo data-value
+    const dataValue = $element.attr('data-value');
+    if (dataValue) {
+      return Number(dataValue);
+    }
+
+    // Prova a ottenere il livello dal testo all'interno di stockAmount
+    const stockAmount = $element.find('.stockAmount').text();
+    if (stockAmount) {
+      return Number(stockAmount);
+    }
+
+    console.warn(`No valid level found for selector: ${selector}`);
+    return 0;
+  };
+
+  window.config.combustionDrive = getLevel('.combustionDriveTechnology .level');
+  window.config.impulseDrive = getLevel('.impulseDriveTechnology .level');
+  window.config.hyperspaceDrive = getLevel('.hyperspaceDriveTechnology .level');
+  window.config.plasmaTech = getLevel('.plasmaTechnology .level');
+  window.config.astroTech = getLevel('.astrophysicsTechnology .level');
+  window.config.computerTech = getLevel('.computerTechnology .level');
+  window.config.hyperspaceTech = getLevel('.hyperspaceTechnology .level');
+  window.config.energyTech = getLevel('.energyTechnology .level');
+  window.config.espionageTech = getLevel('.espionageTechnology .level');
+  window.config.laserTech = getLevel('.laserTechnology .level');
+  window.config.ionTech = getLevel('.ionTechnology .level');
 
   window._saveConfig();
 };
