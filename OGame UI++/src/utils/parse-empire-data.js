@@ -1,24 +1,45 @@
 'use strict';
+
 window.uipp_parseEmpireData = function uipp_parseEmpireData(force, cb) {
+  //console.log('uipp_parseEmpireData called with force:', force);
   var shipNeedUpdate = false;
   for (var key in config.my.planets) {
     if (config.my.planets[key].shipsNeedUpdate < Date.now()) shipNeedUpdate = true;
   }
+  //console.log('shipNeedUpdate:', shipNeedUpdate);
+
   if (force || shipNeedUpdate) {
     $.get('?page=standalone&component=empire&planetType=0', function (str) {
-      var planets = JSON.parse(
-        str.substring(str.indexOf('createImperiumHtml') + 47, str.indexOf('initEmpire') - 16)
-      ).planets;
+      //console.log('Received planet data:', str);
+      try {
+        var planets = JSON.parse(
+          str.substring(str.indexOf('createImperiumHtml') + 47, str.indexOf('initEmpire') - 16)
+        ).planets;
+        //console.log('Parsed planets:', planets);
+      } catch (e) {
+        //console.error('Error parsing planet data:', e);
+        return;
+      }
+
       var hasMoon = false;
       planets.forEach(function (planet) {
         handlePlanet(planet.coordinates, planet);
         if (planet.moonID) hasMoon = true;
       });
+      //console.log('hasMoon:', hasMoon);
+
       if (hasMoon) {
         $.get('?page=standalone&component=empire&planetType=1', function (str) {
-          var moons = JSON.parse(
-            str.substring(str.indexOf('createImperiumHtml') + 47, str.indexOf('initEmpire') - 16)
-          ).planets;
+          //console.log('Received moon data:', str);
+          try {
+            var moons = JSON.parse(
+              str.substring(str.indexOf('createImperiumHtml') + 47, str.indexOf('initEmpire') - 16)
+            ).planets;
+            //console.log('Parsed moons:', moons);
+          } catch (e) {
+            //console.error('Error parsing moon data:', e);
+            return;
+          }
           moons.forEach(function (moon) {
             handlePlanet(moon.coordinates + 'L', moon);
           });
@@ -31,6 +52,7 @@ window.uipp_parseEmpireData = function uipp_parseEmpireData(force, cb) {
   }
 
   function handlePlanet(key, data) {
+    //console.log('handlePlanet called for key:', key, 'with data:', data);
     // Parse ships
     var ships = {};
     for (var labelKey in config.labels) {
@@ -45,6 +67,7 @@ window.uipp_parseEmpireData = function uipp_parseEmpireData(force, cb) {
         }
       }
     }
+    //console.log('Parsed ships:', ships);
 
     config.my.planets[key].shipsLastUpdate = Date.now();
     config.my.planets[key].ships = ships;
@@ -91,5 +114,6 @@ window.uipp_parseEmpireData = function uipp_parseEmpireData(force, cb) {
     config.ionTech = data[121];
     config.laserTech = data[120];
     config.plasmaTech = data[122];
+    //console.log('Planet data updated for key:', key);
   }
 };
