@@ -1,10 +1,15 @@
 'use strict';
 window._addTabExpeditions = function _addTabExpeditions() {
+  //console.log('[DEBUG] _addTabExpeditions() invoked');
+
   if (!window.config.expeditionResults) {
+    ////console.log('[DEBUG] Nessun expeditionResults trovato in window.config, esco dalla funzione');
     return;
   }
+  //console.log('[DEBUG] expeditionResults esiste, proseguo...', window.config.expeditionResults);
 
   var displayedExpe = 100;
+  //console.log('[DEBUG] displayedExpe inizializzato a', displayedExpe);
 
   var $tab = $(
     '<li class="expeditions enhanced"><span class="menu_icon"><div class="menuImage overview"></div></span><a style="position:relative" class="menubutton" href="#" accesskey="" target="_self"><span class="textlabel enhancement">' +
@@ -13,16 +18,29 @@ window._addTabExpeditions = function _addTabExpeditions() {
       window.uipp_images.expeditionMission +
       '" style="height: 27px; position: absolute; right: -29px; top: 0; filter: grayscale(1) brightness(0.3);"/></span></a></li>'
   );
+  //console.log('[DEBUG] Creato elemento $tab per il menu', $tab);
+
   $('#menuTable').append($tab);
+  //console.log('[DEBUG] Aggiunto $tab a #menuTable');
+
   $tab.click(function () {
+    //console.log('[DEBUG] Cliccato su TAB "expeditions"');
     var $wrapper = window._onMenuClick('expeditions');
-    if (!$wrapper) return;
+    //console.log('[DEBUG] _onMenuClick("expeditions") ha restituito:', $wrapper);
+
+    if (!$wrapper) {
+      //console.log('[DEBUG] $wrapper è falsy -> Ritorno senza fare nulla');
+      return;
+    }
 
     var $headerwrapper = $(
       '<div class="uipp-box" style="height:260px;padding:0;background:url(' +
         uipp_images.wings +
         ');background-size:cover;text-align:center;"></div>'
     );
+    //console.log('[DEBUG] Creato $headerwrapper', $headerwrapper);
+
+    // Aggiungo HTML per filtri e statistiche
     $headerwrapper.append(
       [
         '<h3 style="margin:0">' + window.config.labels[15] + '</h3>',
@@ -60,11 +78,15 @@ window._addTabExpeditions = function _addTabExpeditions() {
         '</div>'
       ].join('')
     );
+
     $wrapper.append($headerwrapper);
+    //console.log('[DEBUG] Aggiunto $headerwrapper al $wrapper');
 
     var $tablewrapper = $('<div class="uipp-box"></div>');
     $wrapper.append($tablewrapper);
+    //console.log('[DEBUG] Creato e aggiunto $tablewrapper');
 
+    // Costruiamo l'array pastExpe
     var pastExpe = [];
     for (var key in window.config.expeditionResults) {
       pastExpe.push({
@@ -74,6 +96,8 @@ window._addTabExpeditions = function _addTabExpeditions() {
         data: window.config.expeditionResults[key]
       });
     }
+    //console.log('[DEBUG] pastExpe prima del filter/sort', JSON.parse(JSON.stringify(pastExpe)));
+
     pastExpe = pastExpe
       .filter(function (e) {
         return Object.keys(e.data).length > 0;
@@ -81,6 +105,8 @@ window._addTabExpeditions = function _addTabExpeditions() {
       .sort(function (a, b) {
         return a.timestamp < b.timestamp ? 1 : -1;
       });
+
+    //console.log('[DEBUG] pastExpe dopo filter/sort', JSON.parse(JSON.stringify(pastExpe)));
 
     var tbody = '';
     var $table = $(
@@ -97,38 +123,49 @@ window._addTabExpeditions = function _addTabExpeditions() {
         '</table>'
       ].join('')
     );
+    //console.log('[DEBUG] Creato oggetto $table');
 
     pastExpe.forEach(function (expe, i) {
+      //console.log('[DEBUG] In pastExpe.forEach, expe index=', i, 'expe=', expe);
       var content = '';
 
-      // old format to new format
+      // Conversione eventuale (old format -> new format)
+      expe.data.flags = expe.data.flags || {};
+      // Se c’è antimateria
       if (expe.data.AM) {
-        expe.data.flags = { x: 1 };
-        expe.data.result = { AM: expe.data.AM };
+        expe.data.flags.x = 1;
+        expe.data.result = expe.data.result || {};
+        expe.data.result.AM = expe.data.AM;
       }
+      // Se c’è un item
       if (expe.data.item) {
-        expe.data.flags = { i: 1 };
-        expe.data.result = { item: expe.data.item };
+        expe.data.flags.i = 1;
+        expe.data.result = expe.data.result || {};
+        expe.data.result.item = expe.data.item;
       }
+      // Se ci sono risorse metal/crystal/deuterium
       ['metal', 'crystal', 'deuterium'].forEach(function (resource) {
         if (expe.data[resource]) {
-          expe.data.flags = { r: 1 };
-          expe.data.result = {};
+          expe.data.flags.r = 1;
+          expe.data.result = expe.data.result || {};
           expe.data.result[resource] = expe.data[resource];
         }
       });
+      // Se ci sono navi
       for (var key in expe.data) {
         if (uipp_images.ships[key]) {
-          expe.data.flags = { f: 1 };
-          expe.data.result = {};
+          expe.data.flags.f = 1;
+          expe.data.result = expe.data.result || {};
           expe.data.result[key] = expe.data[key];
         }
       }
 
       expe.resources = { metal: 0, crystal: 0, deuterium: 0 };
-      // Display for each case
+      // CASI DI VISUALIZZAZIONE:
+
       // Debris field
       if (expe.data.debris) {
+        //console.log('[DEBUG] Debris field trovato per expe index=', i);
         ['metal', 'crystal'].forEach(function (res) {
           content += '<div style="display:inline-block; width: 120px; overflow: visible; white-space: nowrap;">';
           content +=
@@ -149,10 +186,12 @@ window._addTabExpeditions = function _addTabExpeditions() {
       }
       // Nothing
       else if (expe.data.flags && expe.data.flags.n) {
+        //console.log('[DEBUG] Nothing (expe.data.flags.n) per expe index=', i);
         content += '<span style="opacity:0.5">' + window._translate('EXPEDITION_FIND_NOTHING') + '</span>';
       }
       // Black Hole
       else if (expe.data.flags && expe.data.flags.l) {
+        //console.log('[DEBUG] Black Hole (expe.data.flags.l) per expe index=', i);
         content +=
           '<img src="' +
           uipp_images.expedition.blackhole +
@@ -161,6 +200,7 @@ window._addTabExpeditions = function _addTabExpeditions() {
       }
       // Pirates
       else if (expe.data.flags && expe.data.flags.p) {
+        //console.log('[DEBUG] Pirates (expe.data.flags.p) per expe index=', i);
         content +=
           '<img src="' +
           uipp_images.expedition.pirates +
@@ -169,6 +209,7 @@ window._addTabExpeditions = function _addTabExpeditions() {
       }
       // Aliens
       else if (expe.data.flags && expe.data.flags.a) {
+        //console.log('[DEBUG] Aliens (expe.data.flags.a) per expe index=', i);
         content +=
           '<img src="' +
           uipp_images.expedition.aliens +
@@ -177,6 +218,7 @@ window._addTabExpeditions = function _addTabExpeditions() {
       }
       // Merchant
       else if (expe.data.flags && expe.data.flags.t) {
+        //console.log('[DEBUG] Merchant (expe.data.flags.t) per expe index=', i);
         content +=
           '<img src="' +
           uipp_images.expedition.merchant +
@@ -187,18 +229,25 @@ window._addTabExpeditions = function _addTabExpeditions() {
       else if (expe.data.flags && expe.data.flags.i) {
         content +=
           '<img src="' + uipp_images.item + '" style="height:28px; margin-right: 8px; vertical-align: -9px" />';
-        content += expe.data.result.item;
+        if (expe.data.result.items) {
+          expe.data.result.items.forEach((item) => {
+            content += `<div>${item.amount}x ${item.name}</div>`;
+          });
+        }
       }
       // Early
       else if (expe.data.flags && expe.data.flags.e) {
+        //console.log('[DEBUG] Early return (expe.data.flags.e) per expe index=', i);
         content += '<span style="opacity:0.5">' + window._translate('EXPEDITION_RETURN_EARLY') + '</span>';
       }
       // Late
       else if (expe.data.flags && expe.data.flags.d) {
+        //console.log('[DEBUG] Late return (expe.data.flags.d) per expe index=', i);
         content += '<span style="opacity:0.5">' + window._translate('EXPEDITION_RETURN_LATE') + '</span>';
       }
       // Fleet
       else if (expe.data.flags && expe.data.flags.f) {
+        //console.log('[DEBUG] Fleet found (expe.data.flags.f) per expe index=', i, 'result=', expe.data.result);
         var fleetResources = _getFleetResources(expe.data.result);
         ['metal', 'crystal', 'deuterium'].forEach(function (res) {
           content += '<div style="display:inline-block; width: 120px; overflow: visible; white-space: nowrap;">';
@@ -217,13 +266,13 @@ window._addTabExpeditions = function _addTabExpeditions() {
         });
         var tooltip = '<div id="tooltip-expe-' + expe.index + '" style="display:none">';
         var nShips = 0;
-        for (var key in expe.data.result) {
-          if (uipp_images.ships[key]) {
+        for (var key2 in expe.data.result) {
+          if (uipp_images.ships[key2]) {
             tooltip += '<div style="white-space: nowrap; min-width: 120px; line-height: 40px; font-size: 13px;">';
             tooltip +=
-              '<img src="' + uipp_images.ships[key] + '" style="height: 40px; margin-right: 8px; float: left" />';
-            tooltip += expe.data.result[key];
-            nShips += expe.data.result[key];
+              '<img src="' + uipp_images.ships[key2] + '" style="height: 40px; margin-right: 8px; float: left" />';
+            tooltip += expe.data.result[key2];
+            nShips += expe.data.result[key2];
             tooltip += '</div>';
           }
         }
@@ -235,13 +284,14 @@ window._addTabExpeditions = function _addTabExpeditions() {
         content += nShips;
         content +=
           '<img src="' +
-          uipp_images.inflight +
+          window.uipp_images.inflight +
           '" style="transform:rotate(180deg); margin-left: 8px; vertical-align: -4px"/>';
         content += '</div>';
         content += tooltip;
       }
       // Resources
       else if (expe.data.flags && expe.data.flags.r) {
+        //console.log('[DEBUG] Resources (expe.data.flags.r) per expe index=', i, 'result=', expe.data.result);
         ['metal', 'crystal', 'deuterium'].forEach(function (res) {
           content += '<div style="display:inline-block; width: 120px; overflow: visible; white-space: nowrap;">';
           content +=
@@ -260,18 +310,20 @@ window._addTabExpeditions = function _addTabExpeditions() {
       }
       // Dark Matter
       else if (expe.data.flags && expe.data.flags.x) {
+        //console.log('[DEBUG] Dark Matter (expe.data.flags.x) per expe index=', i, 'AM=', expe.data.result.AM);
         content +=
           '<img src="' + uipp_images.resources.am + '" style="height:28px; margin-right: 8px; vertical-align: -9px" />';
         content += window._num(expe.data.result.AM);
       }
       // Else... display text
       else if (expe.data.text) {
+        //console.log('[DEBUG] Altri casi, expe.data.text presente, index=', i);
         content += '<p>' + expe.data.text + '</p>';
       }
       // Should never happen
       else {
+        //console.log('[DEBUG] Unknown expedition result, expe index=', i, 'expe=', expe);
         content += 'Unknown expedition result (could not parse message)';
-        console.log('Unknown expedition result', expe);
       }
 
       var worth = uipp_getResourcesWorth();
@@ -279,15 +331,16 @@ window._addTabExpeditions = function _addTabExpeditions() {
         worth.metal * expe.resources.metal +
         worth.crystal * expe.resources.crystal +
         worth.deuterium * expe.resources.deuterium;
+      //console.log('[DEBUG] expeWorth calcolato:', expeWorth);
 
       // add a separator if >10min between 2 actions
       var separator = false;
-      if (pastExpe[i - 1] && pastExpe[i - 1].timestamp - 36e5 / 6 > expe.timestamp) separator = true;
+      if (pastExpe[i - 1] && pastExpe[i - 1].timestamp - 36e5 / 6 > expe.timestamp) {
+        separator = true;
+      }
 
       tbody += [
-        '<tr class="expe-row' +
-          (separator ? ' separator' : '') +
-          '" id="expe-' +
+        '<tr class="expe-row' + (separator ? ' separator' : '') + '" id="expe-' +
           i +
           '" style="cursor:pointer; ' +
           (i > displayedExpe ? 'display:none;' : '') +
@@ -301,16 +354,20 @@ window._addTabExpeditions = function _addTabExpeditions() {
         '<span class="tooltip uipp-expe-overuse overuse-' +
           (expe.data.flags ? expe.data.flags.o || 'x' : 'x') +
           '" title="' +
-          window._translate('EXPEDITION_OVERUSE_' + (expe.data.flags ? expe.data.flags.o || 'x' : 'x').toUpperCase()) +
+          window._translate(
+            'EXPEDITION_OVERUSE_' + (expe.data.flags ? String(expe.data.flags.o || 'x').toUpperCase() : 'X')
+          ) +
           '">&nbsp;</span>',
         expe.coords,
         '<br>',
         '<span class="tooltip uipp-expe-size size-' +
           (expe.data.flags ? expe.data.flags.s || 'x' : 'x') +
           '" title="' +
-          window._translate('EXPEDITION_SIZE_' + (expe.data.flags ? expe.data.flags.s || 'x' : 'x').toUpperCase()) +
+          window._translate(
+            'EXPEDITION_SIZE_' + (expe.data.flags && typeof expe.data.flags.s === 'string' ? expe.data.flags.s.toUpperCase() : 'X')
+          ) +
           '">' +
-          (expe.data.flags ? (expe.data.flags.s || '').toUpperCase() : '') +
+          (expe.data.flags && typeof expe.data.flags.s === 'string' ? expe.data.flags.s.toUpperCase() : '') +
           '</span>',
         '</td>',
         '<td style="text-align:left" data-value="' + expeWorth + '">',
@@ -321,7 +378,9 @@ window._addTabExpeditions = function _addTabExpeditions() {
     });
 
     window.uipp_showMoreExpe = function () {
+      //console.log('[DEBUG] uipp_showMoreExpe() chiamato, displayedExpe era=', displayedExpe);
       displayedExpe += 100;
+      //console.log('[DEBUG] displayedExpe ora=', displayedExpe);
       var i = 0;
       $('.expetable tr').each(function () {
         if (i++ > displayedExpe) {
@@ -337,6 +396,7 @@ window._addTabExpeditions = function _addTabExpeditions() {
 
     var selection = {};
     window.uipp_setExpeSelection = function (i, selected) {
+      //console.log('[DEBUG] uipp_setExpeSelection(i=', i, 'selected=', selected, ')');
       if (selected) {
         $('#expe-' + i).addClass('selected');
         selection[i] = pastExpe[i];
@@ -347,6 +407,7 @@ window._addTabExpeditions = function _addTabExpeditions() {
     };
 
     window.uipp_toggleExpeSelection = function (i) {
+      //console.log('[DEBUG] uipp_toggleExpeSelection(i=', i, ') - state attuale:', !!selection[i]);
       if (selection[i]) {
         uipp_setExpeSelection(i, false);
       } else {
@@ -356,6 +417,7 @@ window._addTabExpeditions = function _addTabExpeditions() {
     };
 
     window.uipp_emptyExpeSelection = function () {
+      //console.log('[DEBUG] uipp_emptyExpeSelection()');
       $('.expe-row.selected').removeClass('selected');
       selection = {};
       updateSelection();
@@ -363,6 +425,7 @@ window._addTabExpeditions = function _addTabExpeditions() {
 
     var filters = {};
     window.uipp_expefilter = function (f) {
+      //console.log('[DEBUG] uipp_expefilter(f=', f, ')');
       window.uipp_emptyExpeSelection();
 
       if (filters[f]) {
@@ -381,6 +444,8 @@ window._addTabExpeditions = function _addTabExpeditions() {
         filters[f] = true;
         $('#expefilter-' + f).css('background', '#AB7AFF');
       }
+
+      //console.log('[DEBUG] filters dopo eventuale toggle:', filters);
 
       if (Object.keys(filters).length === 0) {
         uipp_emptyExpeSelection();
@@ -401,9 +466,7 @@ window._addTabExpeditions = function _addTabExpeditions() {
           type = 'res';
         } else if (e.data.flags.f) {
           type = 'ship';
-        } else {
         }
-
         var keep = false;
         if (filters['debris'] && type === 'debris') {
           keep = true;
@@ -425,7 +488,6 @@ window._addTabExpeditions = function _addTabExpeditions() {
           if (dateMin) {
             keep = keep && Number(e.timestamp) >= dateMin;
           }
-
           if (keep) {
             uipp_setExpeSelection(i, true);
           } else {
@@ -444,35 +506,44 @@ window._addTabExpeditions = function _addTabExpeditions() {
       if (Object.keys(selection).length === 0) {
         expeditions = pastExpe;
       }
+    
       var sum = { metal: 0, crystal: 0, deuterium: 0, am: 0, item: 0 };
+    
       expeditions.forEach(function (expe) {
+        // Somma metallo/cristallo/deuterio
         ['metal', 'crystal', 'deuterium'].forEach(function (res) {
           sum[res] += expe.resources[res];
         });
+    
+        // Antimateria: controlla sia expe.data.AM che expe.data.result.AM
         if (expe.data.AM || (expe.data.result && expe.data.result.AM)) {
-          sum.am += expe.data.AM || (expe.data.result ? expe.data.result.AM : 0);
+          sum.am += expe.data.AM || expe.data.result.AM || 0;
         }
-        if (expe.data.item || (expe.data.result && expe.data.result.item)) {
-          sum.item++;
+    
+        // Oggetto: incrementa se esiste expe.data.item o expe.data.result.item
+        if (expe.data.result && expe.data.result.items) {
+          sum.item += expe.data.result.items.reduce((total, item) => total + item.amount, 0);
         }
       });
-
+    
+      // Aggiorna il pannellino a schermo
       for (var key in sum) {
         $('#expestat-' + key).text(_num(sum[key]));
       }
     }
+    
 
     var style = document.createElement('style');
     style.textContent = 'table.expetable { user-select: none }';
-    style.textContent = 'table.expetable td { border-top: 1px solid #333 }';
+    style.textContent += 'table.expetable td { border-top: 1px solid #333 }';
     style.textContent += 'table.expetable tr.selected td { background: #1f172d }';
     style.textContent += 'table.expetable tr.pending td { background: #222; color: #999; }';
     (document.head || document.documentElement).appendChild(style);
+    //console.log('[DEBUG] Aggiunto stile custom per la tabella expeditions');
 
     $table.find('tbody').append(tbody);
-
-    // Add list
     $tablewrapper.append($table);
+    //console.log('[DEBUG] Aggiunti <tr> al tbody e appesa la tabella nel $tablewrapper');
 
     if (pastExpe.length >= displayedExpe) {
       $tablewrapper.append(
@@ -484,23 +555,27 @@ window._addTabExpeditions = function _addTabExpeditions() {
           '</div>'
         ].join('')
       );
+      //console.log('[DEBUG] Aggiunto tasto "show more" per le spedizioni');
     }
 
     setTimeout(function () {
+      //console.log('[DEBUG] setTimeout -> updateSelection()');
       updateSelection();
     });
 
     window._insertHtml($wrapper);
+    //console.log('[DEBUG] Chiamato _insertHtml($wrapper), fine click handler');
   });
 };
 
 function _date(timestamp) {
   // use gameforge-injected function
+  //console.log('[DEBUG] _date() invocata con timestamp=', timestamp);
   return getFormatedDate(timestamp, '[Y]-[m]-[d] [H]:[i]:[s]');
-  //return new Date(Number(timestamp)).toISOString().split('T').join(' ').replace('.000Z', '');
 }
 
 function _getFleetResources(data) {
+  //console.log('[DEBUG] _getFleetResources() invocata con data=', data);
   var resources = { metal: 0, crystal: 0, deuterium: 0 };
   var shipValues = {
     202: { metal: 2000, crystal: 2000, deuterium: 0 },
@@ -530,5 +605,6 @@ function _getFleetResources(data) {
     }
   }
 
+  ////console.log('[DEBUG] Risultato finale di _getFleetResources:', resources);
   return resources;
 }
