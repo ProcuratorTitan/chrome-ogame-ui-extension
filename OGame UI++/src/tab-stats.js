@@ -74,6 +74,8 @@ window._addTabStats = function _addTabStats() {
     var rentabilityTimes = [];
     var fullIn = { metal: [], crystal: [], deuterium: [] };
     myPlanets.forEach(function (planet) {
+      //console.log("Planet Resources (raw):", planet.resources);
+  //console.log("Last Update Timestamp:", planet.resources.lastUpdate);
       // add rentability times to array
       ['metal', 'crystal', 'deuterium'].forEach(function (resource) {
         rentabilityTimes.push({
@@ -109,6 +111,7 @@ window._addTabStats = function _addTabStats() {
           currentRealtimePlanetResources[resource] = planet.resources[resource].max;
         } else {
           currentRealtimePlanetResources[resource] = actuatedAmount;
+      //console.log("Real-Time Resources (calculated):", currentRealtimePlanetResources);
         }
       });
 
@@ -130,18 +133,22 @@ window._addTabStats = function _addTabStats() {
       globalStats.prod.metal += planet.resources.metal.prod;
       globalStats.prod.crystal += planet.resources.crystal.prod;
       globalStats.prod.deuterium += planet.resources.deuterium.prod;
+      //console.log("Global Production Stats:", globalStats.prod);
 
       // add mines level to global stats
       globalStats.level.metal += planet.resources.metal.level || 0;
       globalStats.level.crystal += planet.resources.crystal.level || 0;
       globalStats.level.deuterium += planet.resources.deuterium.level || 0;
+      //console.log("Global Mine Levels (before division):", globalStats.level);
 
       // add current resources to global stats
       globalStats.current.metal += currentRealtimePlanetResources.metal;
       globalStats.current.crystal += currentRealtimePlanetResources.crystal;
       globalStats.current.deuterium += currentRealtimePlanetResources.deuterium;
+      //console.log("Global Current Resources Stats:", globalStats.current);
 
       globalStats.planetCount++;
+      //console.log("Planet Count:", globalStats.planetCount);
 
       // add planet stats html
       planetStatsHtml += [
@@ -312,27 +319,6 @@ window._addTabStats = function _addTabStats() {
         '</tr>'
       ].join('');
     });
-
-    // add rentability times for mines until median level, not just next
-    /*var medianMineLevels = _getMedianMineLevels();
-    myPlanets.forEach(function (planet) {
-      ['metal', 'crystal', 'deuterium'].forEach(function (resource) {
-        for (var level = planet.resources[resource].level + 2; level <= medianMineLevels[resource]; level++) {
-          rentabilityTimes.push({
-            coords: planet.coords,
-            resource: resource,
-            time: window._getRentabilityTime(
-              resource,
-              planet.resources[resource].prod,
-              planet.resources[resource].level,
-              level
-            ),
-            level: level,
-            inprog: null
-          });
-        }
-      });
-    });*/
 
     // selected
     var selected = {
@@ -966,7 +952,7 @@ window._addTabStats = function _addTabStats() {
           inprogPoints += (rentability.totalCost || rentability.astroCost)[1];
           inprogPoints += (rentability.totalCost || rentability.astroCost)[2];
         } catch (e) {
-          console.log('OGame UI++: Error parsing in-progress');
+          //console.log('OGame UI++: Error parsing in-progress');
         }
       }
     });
@@ -1146,28 +1132,42 @@ window._addTabStats = function _addTabStats() {
         if ($selectedWrapper) {
           $selectedWrapper.remove();
         }
-
+      
         if (Object.keys(simulatedNextBuilds).length === 0) {
           return;
         }
-
+      
         var totalCost = [0, 0, 0];
         var timeToAchieve = 0;
+      
         for (var simKey in simulatedNextBuilds) {
-          var cost = simulatedNextBuilds[simKey].astroCost || simulatedNextBuilds[simKey].totalCost;
-          if (!simulatedNextBuilds[simKey].inprog) {
-            totalCost[0] += cost[0];
-            totalCost[1] += cost[1];
-            totalCost[2] += cost[2];
-
-            timeToAchieve += simulatedNextBuilds[simKey].time;
+          var build = simulatedNextBuilds[simKey];
+      
+          // Determina il costo corretto
+          var cost = build.astroCost || build.totalCost || build.plasmaCost || null;
+      
+          // Verifica che il costo sia valido
+          if (!cost || !Array.isArray(cost) || cost.length < 3) {
+            //console.warn("Invalid cost structure for simulatedNextBuilds[simKey]:", build);
+            continue;
+          }
+      
+          if (!build.inprog) {
+            totalCost[0] += cost[0] || 0;
+            totalCost[1] += cost[1] || 0;
+            totalCost[2] += cost[2] || 0;
+      
+            timeToAchieve += build.time || 0;
           }
         }
-
-        var totalCostWorth = totalCost[0] * worth.metal + totalCost[1] * worth.crystal + totalCost[2] * worth.deuterium;
-
-        var timeToAchieve = totalCostWorth / globalProdWorth;
-
+      
+        var totalCostWorth =
+          (totalCost[0] || 0) * (worth.metal || 0) +
+          (totalCost[1] || 0) * (worth.crystal || 0) +
+          (totalCost[2] || 0) * (worth.deuterium || 0);
+      
+        timeToAchieve = totalCostWorth / (globalProdWorth || 1); // Evitare divisione per zero
+      
         $rentabilityWrapper.append(
           [
             '<div class="uipp-simulation"',
@@ -1183,6 +1183,8 @@ window._addTabStats = function _addTabStats() {
           ].join('')
         );
       };
+      
+      
     }
 
     $wrapperRentability.append(
