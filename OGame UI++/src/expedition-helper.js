@@ -1,43 +1,68 @@
 'use strict';
 // Funzione per salvare i bonus dalla pagina dei bonus
 window._saveBonusFromLfBonusesPage = function _saveBonusFromLfBonusesPage() {
+  //console.log('Esegui _saveBonusFromLfBonusesPage');
+  
   if (window.location.href.includes('page=ingame&component=lfbonuses')) {
+    //console.log('Siamo nella pagina dei bonus');
+
+    // Assicurati che jQuery sia disponibile prima di proseguire
+    if (typeof $ === 'undefined') {
+      //console.error('jQuery non è disponibile!');
+      return;
+    }
+
     // Bonus "Tecnologia Sensori migliorata"
-    const sensorBonusElement = $(
-      'inner-bonus-item-heading[data-toggable="subcategoryResourcesExpedition"] .subCategoryBonus'
-    );
-    const sensorBonus = sensorBonusElement.length
-      ? parseFloat(sensorBonusElement.text().replace('%', '').replace(',', '.'))
-      : 0;
+    const sensorBonusElement = $('inner-bonus-item-heading[data-toggable="subcategoryResourcesExpedition"] .subCategoryBonus');
+    
+    if (sensorBonusElement.length > 0) {
+      const sensorBonus = parseFloat(sensorBonusElement.text().trim().replace('%', '').replace(',', '.')) || 0;
+      localStorage.setItem('sensorBonus', sensorBonus);
+      //console.log('sensorBonus salvato:', sensorBonus);
+    } else {
+      //console.warn('Elemento sensorBonus non trovato!');
+    }
 
     // Bonus "Esploratore"
-    const explorerBonusElement = $(
-      'inner-bonus-item-heading[data-toggable="subcategoryCharacterclasses3"] .subCategoryBonus'
-    );
-    const explorerBonusText = explorerBonusElement.length ? explorerBonusElement.text() : '';
-    const explorerBonus = explorerBonusText.includes('Totale:')
-      ? parseFloat(explorerBonusText.replace('Totale:', '').replace('%', '').replace(',', '.'))
-      : 0;
+    const explorerBonusElement = $('inner-bonus-item-heading[data-toggable="subcategoryCharacterclasses3"] .subCategoryBonus');
+    
+    if (explorerBonusElement.length > 0) {
+      const explorerBonusText = explorerBonusElement.text().trim();
+      const explorerBonus = explorerBonusText.includes('Totale:')
+        ? parseFloat(explorerBonusText.replace('Totale:', '').replace('%', '').replace(',', '.'))
+        : 0;
+      localStorage.setItem('explorerBonus', explorerBonus);
+      //console.log('explorerBonus salvato:', explorerBonus);
+    } else {
+      //console.warn('Elemento explorerBonus non trovato!');
+    }
 
-    // Salva i bonus nel localStorage
-    localStorage.setItem('sensorBonus', sensorBonus);
-    localStorage.setItem('explorerBonus', explorerBonus);
-
-    console.log('Bonus salvati:', { sensorBonus, explorerBonus });
+    //console.log('Bonus salvati con successo!');
+  } else {
+    //console.warn('Non siamo nella pagina dei bonus.');
   }
 };
 
 // Esegui la funzione se siamo nella pagina corretta
 if (window.location.href.includes('page=ingame&component=lfbonuses')) {
-  window.addEventListener('DOMContentLoaded', window._saveBonusFromLfBonusesPage);
+  //console.log('Aggiungi event listener per DOMContentLoaded');
+  window.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+      window._saveBonusFromLfBonusesPage();
+    }, 2000);  // Ritardo per assicurarsi che gli elementi siano caricati
+  });
 }
+
 
 // Funzione per aggiungere l'intervallo dell'helper di spedizione
 window._addExpeditionHelperInterval = function _addExpeditionHelperInterval() {
+  //console.log('Esegui _addExpeditionHelperInterval');
   setInterval(function () {
     const $el = $('form#shipsChosen:not(.enhanced-expedition)');
+    //console.log('$el:', $el);
 
     if ($el.length) {
+      //console.log('Aggiungi classe enhanced-expedition');
       $el.addClass('enhanced-expedition');
 
       // Determina il punteggio massimo dell'universo
@@ -52,6 +77,7 @@ window._addExpeditionHelperInterval = function _addExpeditionHelperInterval() {
           }
         }
       }
+      //console.log('topScore:', topScore);
 
       // Calcola i valori dinamici in base al punteggio massimo
       let ritrovamentoMassimoBase = 25000000;
@@ -62,6 +88,7 @@ window._addExpeditionHelperInterval = function _addExpeditionHelperInterval() {
       if (topScore < 5000000) ritrovamentoMassimoBase = 9000000;
       if (topScore < 1000000) ritrovamentoMassimoBase = 6000000;
       if (topScore < 100000) ritrovamentoMassimoBase = 2500000;
+      //console.log('ritrovamentoMassimoBase:', ritrovamentoMassimoBase);
 
       let maxExpeditionPoints = 25000;
       if (topScore < 100000000) maxExpeditionPoints = 21000;
@@ -71,6 +98,7 @@ window._addExpeditionHelperInterval = function _addExpeditionHelperInterval() {
       if (topScore < 5000000) maxExpeditionPoints = 9000;
       if (topScore < 1000000) maxExpeditionPoints = 6000;
       if (topScore < 100000) maxExpeditionPoints = 2500;
+      //console.log('maxExpeditionPoints:', maxExpeditionPoints);
 
       const shipPoints = {
         fighterLight: 20,
@@ -83,13 +111,13 @@ window._addExpeditionHelperInterval = function _addExpeditionHelperInterval() {
         deathstar: 45000,
         reaper: 700,
         explorer: 115,
-
         transporterSmall: 20,
         transporterLarge: 60,
         colonyShip: 150,
         recycler: 80,
         espionageProbe: 5,
       };
+      //console.log('shipPoints:', shipPoints);
 
       $(
         [
@@ -114,12 +142,15 @@ window._addExpeditionHelperInterval = function _addExpeditionHelperInterval() {
           '</div>'
         ].join('')
       ).insertAfter($('#allornone'));
+      //console.log('Elemento inserito dopo #allornone');
 
       function getTooltip() {
+        //console.log('Esegui getTooltip');
         var ret = 'Optimal expedition fleet :|';
         ret += '<div style=&quot;width:200px&quot;>';
 
         var nExplorers = Number($('.explorer .amount').attr('data-value'));
+        //console.log('nExplorers:', nExplorers);
         var maxSmallMetalDiscovery =
         ret +=
           'Left click to select ships with enough cargo to return the largest common metal find (' +
@@ -134,6 +165,7 @@ window._addExpeditionHelperInterval = function _addExpeditionHelperInterval() {
         var expeSlotsTotal = $('#slots .fleft:nth-child(2)')
           .text()
           .match(/[0-9]+/g)[1];
+        //console.log('expeSlotsUsed:', expeSlotsUsed, 'expeSlotsTotal:', expeSlotsTotal);
         var fleetDivider = expeSlotsTotal - expeSlotsUsed || 1;
         ret +=
           'Right click to select ' +
@@ -156,6 +188,7 @@ window._addExpeditionHelperInterval = function _addExpeditionHelperInterval() {
 
       // Aggiorna i punti di spedizione
       setInterval(function () {
+        //console.log('Aggiorna i punti di spedizione');
         let currentPoints = 0;
         const shipsSelected = {
           fighterLight: Number($('.fighterLight input[type=text]').val()),
@@ -174,10 +207,12 @@ window._addExpeditionHelperInterval = function _addExpeditionHelperInterval() {
           recycler: Number($('.recycler input[type=text]').val()),
           espionageProbe: Number($('.espionageProbe input[type=text]').val()),
         };
+        //console.log('shipsSelected:', shipsSelected);
 
         for (const key in shipsSelected) {
           currentPoints += shipsSelected[key] * shipPoints[key];
         }
+        //console.log('currentPoints:', currentPoints);
 
         $('#uipp-current-expedition-points').text(currentPoints);
 
@@ -188,112 +223,123 @@ window._addExpeditionHelperInterval = function _addExpeditionHelperInterval() {
           'color',
           percent >= 100 ? '#99CC00' : percent >= 70 ? '#d29d00' : '#d43635'
         );
-        }, 100);
-      };
-
-      window.uipp_changeExpeditionSystemOffset = function (event) {
-        // Calcola la direzione dello scroll: +1 (su) o -1 (giù)
-        const diff = event.deltaY > 0 ? -1 : +1;
-      
-        // Aggiorna l'offset del sistema
-        config.expeditionSystemOffset = (config.expeditionSystemOffset || 0) + diff;
-      
-        // Aggiorna l'interfaccia per mostrare l'offset aggiornato
-        document.getElementById('system-offset').innerHTML =
-          ((config.expeditionSystemOffset || 0) >= 0 ? '+' : '') + (config.expeditionSystemOffset || 0);
-      
-        // Determina il nuovo sistema basato sull'offset
-        let system = window._getCurrentPlanetCoordinates()[1] + (config.expeditionSystemOffset || 0);
-      
-        // Garantisce che il sistema rientri nei limiti dell'universo
-        if (system > Number(config.universe.systems)) system = config.universe.systems;
-        if (system < 1) system = 1;
-      
-        // Aggiorna il campo di input del sistema
-        $('input#system').val(String(system)).keyup();
-      
-        // Salva la configurazione aggiornata
-        window._saveConfig();
-      
-        // Previene il comportamento predefinito dello scroll
-        event.preventDefault();
-        return false;
-      };      
-
-      window.uipp_autoFillExpedition = function () {
-        // Ottieni i dati dal gioco
-        const nExplorers = Number($('.explorer .amount').attr('data-value'));
-        const nReapers = Number($('.reaper .amount').attr('data-value'));
-        const nPathfinders = Number($('.pathfinder .amount').attr('data-value'));
-        const nProbes = Number($('.espionageProbe .amount').attr('data-value'));
-        const topScore = config.universe.topScore || 0; // Punteggio massimo dell'universo
-      
-        // Determina il Ritrovamento massimo base dinamicamente
-        let ritrovamentoMassimoBase = 25000000; // Valore predefinito
-        if (topScore < 100000000) ritrovamentoMassimoBase = 21000000;
-        if (topScore < 75000000) ritrovamentoMassimoBase = 18000000;
-        if (topScore < 50000000) ritrovamentoMassimoBase = 15000000;
-        if (topScore < 25000000) ritrovamentoMassimoBase = 12000000;
-        if (topScore < 5000000) ritrovamentoMassimoBase = 9000000;
-        if (topScore < 1000000) ritrovamentoMassimoBase = 6000000;
-        if (topScore < 100000) ritrovamentoMassimoBase = 2500000;
-      
-        // Bonus dinamici (gestisce anche l'assenza di bonus iniziali)
-        const bonusClasseEsploratore =
-          parseFloat(localStorage.getItem('explorerBonus')) / 100 || 0;
-        const bonusRitrovamentiRisorse =
-          parseFloat(localStorage.getItem('sensorBonus')) / 100 || 0;
-        const bonusPathfinder = nExplorers > 0 ? 2 : 1; // Bonus Pathfinder se ci sono esploratori
-      
-        // Calcola il Ritrovamento massimo effettivo
-        const velocitaEconomica = config.universe.speed || 1; // Velocità dell'universo
-        const ritrovamentoBaseEconomico =
-          ritrovamentoMassimoBase * velocitaEconomica; // Primo termine della formula
-        const bonusTotali = bonusClasseEsploratore + bonusRitrovamentiRisorse;
-        const bonusConPathfinder = bonusTotali * bonusPathfinder; // Bonus Pathfinder
-        const bonusTotaleApplicato =
-          bonusConPathfinder * ritrovamentoMassimoBase; // Secondo termine della formula
-        const ritrovamentoMassimoEffettivo =
-          ritrovamentoBaseEconomico + bonusTotaleApplicato;
-      
-        console.log('Ritrovamento massimo effettivo:', ritrovamentoMassimoEffettivo);
-      
-        // Calcola il numero di trasportatori grandi necessari
-        const ownedBigTransport = Number($('.transporterLarge .amount').attr('data-value'));
-        const bigTransportCapacity =
-          (1 + (config.hyperspaceTech || 0) * 0.05) * 25000; // Capacità di trasporto per trasportatore grande
-        const maxBigTransportForDiscovery = Math.ceil(
-          ritrovamentoMassimoEffettivo / bigTransportCapacity
-        );
-      
-        // Limita al numero di trasportatori disponibili
-        const nBigTransport = Math.min(maxBigTransportForDiscovery, ownedBigTransport);
-      
-        // Imposta i trasportatori grandi nei campi di input
-        $('input[name=transporterLarge]').val(nBigTransport).keyup();
-      
-        // Configura gli esploratori e altre navi
-        if (nExplorers > 0) {
-        $('input[name=explorer]').val(1).keyup();
-        }
-        // Configura Reaper
-        if (nReapers > 0) {
-        $('input[name=reaper]').val(1).keyup();
-        }
-        // Configura Pathfinder
-        if (nPathfinders > 0) {
-        $('input[name=pathfinder]').val(1).keyup();
-        }
-        // Configura Sonda Spia
-        if (nProbes > 0) {
-        $('input[name=espionageProbe]').val(1).keyup();
-        }
-
-        // Seleziona posizione 16 e sistema
-        $('input#position').val('16').keyup();
-
-        // select expedition mission
-        $('#missionButton15').click()
+        //console.log('percent:', percent);
+      }, 100);
     }
   }, 100);
+};
+
+window.uipp_changeExpeditionSystemOffset = function (event) {
+  //console.log('Esegui uipp_changeExpeditionSystemOffset');
+  // Calcola la direzione dello scroll: +1 (su) o -1 (giù)
+  const diff = event.deltaY > 0 ? -1 : +1;
+  //console.log('diff:', diff);
+
+  // Aggiorna l'offset del sistema
+  config.expeditionSystemOffset = (config.expeditionSystemOffset || 0) + diff;
+  //console.log('config.expeditionSystemOffset:', config.expeditionSystemOffset);
+
+  // Aggiorna l'interfaccia per mostrare l'offset aggiornato
+  document.getElementById('system-offset').innerHTML =
+    ((config.expeditionSystemOffset || 0) >= 0 ? '+' : '') + (config.expeditionSystemOffset || 0);
+
+  // Determina il nuovo sistema basato sull'offset
+  let system = window._getCurrentPlanetCoordinates()[1] + (config.expeditionSystemOffset || 0);
+  //console.log('system:', system);
+
+  // Garantisce che il sistema rientri nei limiti dell'universo
+  if (system > Number(config.universe.systems)) system = config.universe.systems;
+  if (system < 1) system = 1;
+  //console.log('system dopo limiti:', system);
+
+  // Aggiorna il campo di input del sistema
+  $('input#system').val(String(system)).keyup();
+
+  // Salva la configurazione aggiornata
+  window._saveConfig();
+
+  // Previene il comportamento predefinito dello scroll
+  event.preventDefault();
+  return false;
+};
+
+window.uipp_autoFillExpedition = function () {
+  //console.log('Esegui uipp_autoFillExpedition');
+  // Ottieni i dati dal gioco
+  const nExplorers = Number($('.explorer .amount').attr('data-value'));
+  const nReapers = Number($('.reaper .amount').attr('data-value'));
+  const nPathfinders = Number($('.pathfinder .amount').attr('data-value'));
+  const nProbes = Number($('.espionageProbe .amount').attr('data-value'));
+  const topScore = config.universe.topScore || 0; // Punteggio massimo dell'universo
+  //console.log('nExplorers:', nExplorers, 'nReapers:', nReapers, 'nPathfinders:', nPathfinders, 'nProbes:', nProbes, 'topScore:', topScore);
+
+  // Determina il Ritrovamento massimo base dinamicamente
+  let ritrovamentoMassimoBase = 25000000; // Valore predefinito
+  if (topScore < 100000000) ritrovamentoMassimoBase = 21000000;
+  if (topScore < 75000000) ritrovamentoMassimoBase = 18000000;
+  if (topScore < 50000000) ritrovamentoMassimoBase = 15000000;
+  if (topScore < 25000000) ritrovamentoMassimoBase = 12000000;
+  if (topScore < 5000000) ritrovamentoMassimoBase = 9000000;
+  if (topScore < 1000000) ritrovamentoMassimoBase = 6000000;
+  if (topScore < 100000) ritrovamentoMassimoBase = 2500000;
+  //console.log('ritrovamentoMassimoBase:', ritrovamentoMassimoBase);
+
+  // Bonus dinamici (gestisce anche l'assenza di bonus iniziali)
+  const bonusClasseEsploratore =
+    parseFloat(localStorage.getItem('explorerBonus')) / 100 || 0;
+  const bonusRitrovamentiRisorse =
+    parseFloat(localStorage.getItem('sensorBonus')) / 100 || 0;
+  const bonusPathfinder = nExplorers > 0 ? 2 : 1; // Bonus Pathfinder se ci sono esploratori
+  //console.log('bonusClasseEsploratore:', bonusClasseEsploratore, 'bonusRitrovamentiRisorse:', bonusRitrovamentiRisorse, 'bonusPathfinder:', bonusPathfinder);
+
+  // Calcola il Ritrovamento massimo effettivo
+  const velocitaEconomica = config.universe.speed || 1; // Velocità dell'universo
+  const ritrovamentoBaseEconomico =
+    ritrovamentoMassimoBase * velocitaEconomica; // Primo termine della formula
+  const bonusTotali = bonusClasseEsploratore + bonusRitrovamentiRisorse;
+  const bonusConPathfinder = bonusTotali * bonusPathfinder; // Bonus Pathfinder
+  const bonusTotaleApplicato =
+    bonusConPathfinder * ritrovamentoMassimoBase; // Secondo termine della formula
+  const ritrovamentoMassimoEffettivo =
+    ritrovamentoBaseEconomico + bonusTotaleApplicato;
+  //console.log('ritrovamentoMassimoEffettivo:', ritrovamentoMassimoEffettivo);
+
+  // Calcola il numero di trasportatori grandi necessari
+  const ownedBigTransport = Number($('.transporterLarge .amount').attr('data-value'));
+  const bigTransportCapacity =
+    (1 + (config.hyperspaceTech || 0) * 0.05) * 25000; // Capacità di trasporto per trasportatore grande
+  const maxBigTransportForDiscovery = Math.ceil(
+    ritrovamentoMassimoEffettivo / bigTransportCapacity
+  );
+  //console.log('ownedBigTransport:', ownedBigTransport, 'bigTransportCapacity:', bigTransportCapacity, 'maxBigTransportForDiscovery:', maxBigTransportForDiscovery);
+
+  // Limita al numero di trasportatori disponibili
+  const nBigTransport = Math.min(maxBigTransportForDiscovery, ownedBigTransport);
+  //console.log('nBigTransport:', nBigTransport);
+
+  // Imposta i trasportatori grandi nei campi di input
+  $('input[name=transporterLarge]').val(nBigTransport).keyup();
+
+  // Configura gli esploratori e altre navi
+  if (nExplorers > 0) {
+    $('input[name=explorer]').val(1).keyup();
+  }
+  // Configura Reaper
+  if (nReapers > 0) {
+    $('input[name=reaper]').val(1).keyup();
+  }
+  // Configura Pathfinder
+  if (nPathfinders > 0) {
+    $('input[name=pathfinder]').val(1).keyup();
+  }
+  // Configura Sonda Spia
+  if (nProbes > 0) {
+    $('input[name=espionageProbe]').val(1).keyup();
+  }
+
+  // Seleziona posizione 16 e sistema
+  $('input#position').val('16').keyup();
+
+  // select expedition mission
+  $('#missionButton15').click();
 };
