@@ -453,9 +453,21 @@ window._addTabExpeditions = function _addTabExpeditions() {
       }
 
       var dateMin = 0;
-      if (filters['1d']) dateMin = Date.now() - 1 * 24 * 36e5;
-      if (filters['7d']) dateMin = Date.now() - 7 * 24 * 36e5;
-      if (filters['30d']) dateMin = Date.now() - 30 * 24 * 36e5;
+      if (filters['1d']) {
+        var now = new Date();
+        // Inizio della giornata corrente (00:00)
+        dateMin = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      }
+      if (filters['7d']) {
+        var now = new Date();
+        // Inizio della giornata di 7 giorni fa
+        dateMin = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).getTime();
+      }
+      if (filters['30d']) {
+        var now = new Date();
+        // Inizio della giornata di 30 giorni fa
+        dateMin = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).getTime();
+      }
 
       var categoryFilter = filters['debris'] || filters['res'] || filters['ship'];
       pastExpe.forEach(function (e, i) {
