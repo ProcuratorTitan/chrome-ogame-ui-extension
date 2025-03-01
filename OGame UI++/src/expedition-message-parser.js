@@ -121,7 +121,7 @@ window.uipp_parseExpeditionMessage = function ($el) {
 
   switch (expeditionResult) {
     case 'nothing':
-      ret.flags.n = 1;
+      //ret.flags.n = 1;
       break;
     case 'ressources':
       ret.flags.r = 1;
@@ -139,7 +139,7 @@ window.uipp_parseExpeditionMessage = function ($el) {
       ret.flags.x = 1;
       break;
     case 'navigation':
-      ret.flags.d = 1; 
+      //ret.flags.d = 1; 
       break;
     case 'items': // Nuovo caso per gli item
       ret.flags.i = 1;

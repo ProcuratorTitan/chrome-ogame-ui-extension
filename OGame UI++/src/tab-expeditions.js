@@ -185,19 +185,19 @@ window._addTabExpeditions = function _addTabExpeditions() {
           '<figure class="planetIcon tf tooltip js_hideTipOnMobile tpd-hideOnClickOutside" style="float: right; margin-top: 6px; margin-right: 5px;"></figure>';
       }
       // Nothing
-      else if (expe.data.flags && expe.data.flags.n) {
+      //else if (expe.data.flags && expe.data.flags.n) {
         //console.log('[DEBUG] Nothing (expe.data.flags.n) per expe index=', i);
-        content += '<span style="opacity:0.5">' + window._translate('EXPEDITION_FIND_NOTHING') + '</span>';
-      }
+        //content += '<span style="opacity:0.5">' + window._translate('EXPEDITION_FIND_NOTHING') + '</span>';
+      //}
       // Black Hole
-      else if (expe.data.flags && expe.data.flags.l) {
+      //else if (expe.data.flags && expe.data.flags.l) {
         //console.log('[DEBUG] Black Hole (expe.data.flags.l) per expe index=', i);
-        content +=
-          '<img src="' +
-          uipp_images.expedition.blackhole +
-          '" style="height:28px; margin-right: 8px; vertical-align: -9px" />';
-        content += '<span style="color:#F44336">' + window._translate('EXPEDITION_LOSE_FLEET') + '</span>';
-      }
+        //content +=
+          //'<img src="' +
+          //uipp_images.expedition.blackhole +
+          //'" style="height:28px; margin-right: 8px; vertical-align: -9px" />';
+        //content += '<span style="color:#F44336">' + window._translate('EXPEDITION_LOSE_FLEET') + '</span>';
+      //}
       // Pirates
       else if (expe.data.flags && expe.data.flags.p) {
         //console.log('[DEBUG] Pirates (expe.data.flags.p) per expe index=', i);
@@ -236,15 +236,15 @@ window._addTabExpeditions = function _addTabExpeditions() {
         }
       }
       // Early
-      else if (expe.data.flags && expe.data.flags.e) {
+      //else if (expe.data.flags && expe.data.flags.e) {
         //console.log('[DEBUG] Early return (expe.data.flags.e) per expe index=', i);
-        content += '<span style="opacity:0.5">' + window._translate('EXPEDITION_RETURN_EARLY') + '</span>';
-      }
+        //content += '<span style="opacity:0.5">' + window._translate('EXPEDITION_RETURN_EARLY') + '</span>';
+      //}
       // Late
-      else if (expe.data.flags && expe.data.flags.d) {
+      //else if (expe.data.flags && expe.data.flags.d) {
         //console.log('[DEBUG] Late return (expe.data.flags.d) per expe index=', i);
-        content += '<span style="opacity:0.5">' + window._translate('EXPEDITION_RETURN_LATE') + '</span>';
-      }
+        //content += '<span style="opacity:0.5">' + window._translate('EXPEDITION_RETURN_LATE') + '</span>';
+      //}
       // Fleet
       else if (expe.data.flags && expe.data.flags.f) {
         //console.log('[DEBUG] Fleet found (expe.data.flags.f) per expe index=', i, 'result=', expe.data.result);
@@ -316,15 +316,15 @@ window._addTabExpeditions = function _addTabExpeditions() {
         content += window._num(expe.data.result.AM);
       }
       // Else... display text
-      else if (expe.data.text) {
+      //else if (expe.data.text) {
         //console.log('[DEBUG] Altri casi, expe.data.text presente, index=', i);
-        content += '<p>' + expe.data.text + '</p>';
-      }
+        //content += '<p>' + expe.data.text + '</p>';
+      //}
       // Should never happen
-      else {
+      //else {
         //console.log('[DEBUG] Unknown expedition result, expe index=', i, 'expe=', expe);
-        content += 'Unknown expedition result (could not parse message)';
-      }
+        //content += 'Unknown expedition result (could not parse message)';
+      //}
 
       var worth = uipp_getResourcesWorth();
       var expeWorth =
@@ -339,42 +339,49 @@ window._addTabExpeditions = function _addTabExpeditions() {
         separator = true;
       }
 
-      tbody += [
-        '<tr class="expe-row' + (separator ? ' separator' : '') + '" id="expe-' +
-          i +
-          '" style="cursor:pointer; ' +
-          (i > displayedExpe ? 'display:none;' : '') +
-          '" onclick="uipp_toggleExpeSelection(' +
-          i +
-          ')">',
-        '<td data-value="' + expe.timestamp + '">',
-        _date(expe.timestamp),
-        '</td>',
-        '<td>',
-        '<span class="tooltip uipp-expe-overuse overuse-' +
-          (expe.data.flags ? expe.data.flags.o || 'x' : 'x') +
-          '" title="' +
-          window._translate(
-            'EXPEDITION_OVERUSE_' + (expe.data.flags ? String(expe.data.flags.o || 'x').toUpperCase() : 'X')
-          ) +
-          '">&nbsp;</span>',
-        expe.coords,
-        '<br>',
-        '<span class="tooltip uipp-expe-size size-' +
-          (expe.data.flags ? expe.data.flags.s || 'x' : 'x') +
-          '" title="' +
-          window._translate(
-            'EXPEDITION_SIZE_' + (expe.data.flags && typeof expe.data.flags.s === 'string' ? expe.data.flags.s.toUpperCase() : 'X')
-          ) +
-          '">' +
-          (expe.data.flags && typeof expe.data.flags.s === 'string' ? expe.data.flags.s.toUpperCase() : '') +
-          '</span>',
-        '</td>',
-        '<td style="text-align:left" data-value="' + expeWorth + '">',
-        content,
-        '</td>',
-        '</tr>'
-      ].join('');
+      // Solo se content non è vuoto, aggiungiamo la riga:
+      if (content.trim().length > 0) {
+        tbody += [
+          '<tr class="expe-row' + (separator ? ' separator' : '') + '" id="expe-' +
+            i +
+            '" style="cursor:pointer; ' +
+            (i > displayedExpe ? 'display:none;' : '') +
+            '" onclick="uipp_toggleExpeSelection(' +
+            i +
+            ')">',
+          '<td data-value="' + expe.timestamp + '">',
+          _date(expe.timestamp),
+          '</td>',
+          '<td>',
+          '<span class="tooltip uipp-expe-overuse overuse-' +
+            (expe.data.flags ? expe.data.flags.o || 'x' : 'x') +
+            '" title="' +
+            window._translate(
+              'EXPEDITION_OVERUSE_' + (expe.data.flags ? String(expe.data.flags.o || 'x').toUpperCase() : 'X')
+            ) +
+            '">&nbsp;</span>',
+          expe.coords,
+          '<br>',
+          '<span class="tooltip uipp-expe-size size-' +
+            (expe.data.flags ? expe.data.flags.s || 'x' : 'x') +
+            '" title="' +
+            window._translate(
+              'EXPEDITION_SIZE_' + (expe.data.flags && typeof expe.data.flags.s === 'string'
+                ? expe.data.flags.s.toUpperCase()
+                : 'X')
+            ) +
+            '">' +
+            (expe.data.flags && typeof expe.data.flags.s === 'string'
+              ? expe.data.flags.s.toUpperCase()
+              : '') +
+            '</span>',
+          '</td>',
+          '<td style="text-align:left" data-value="' + expeWorth + '">',
+          content,
+          '</td>',
+          '</tr>'
+        ].join('');
+      }
     });
 
     window.uipp_showMoreExpe = function () {
