@@ -6,7 +6,8 @@ $(document).ready(function() {
   window.config.links = window.config.links || {
     BattleSim: 'https://battlesim.logserver.org/it',
     TradeCalc: 'https://proxyforgame.com/it/ogame/calc/trade.php',
-    OTools: 'https://www.ghiroblu.com/o-tools/it/building_costs/'
+    OTools: 'https://www.ghiroblu.com/o-tools/it/building_costs/',
+    LifeformBuilding: 'https://lonestarx.net/'
   };
 
   // Aggiunge link ai tab
