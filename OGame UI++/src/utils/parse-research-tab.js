@@ -42,6 +42,11 @@ window._parseResearchTab = function _parseResearchTab() {
   window.config.espionageTech = getLevel('.espionageTechnology .level');
   window.config.laserTech = getLevel('.laserTechnology .level');
   window.config.ionTech = getLevel('.ionTechnology .level');
+  window.config.researchTech = getLevel('.researchTechnology .level');
+  window.config.weaponsTech = getLevel('.weaponsTechnology .level');
+  window.config.shieldingTech = getLevel('.shieldingTechnology .level');
+  window.config.armorTech = getLevel('.armorTechnology .level');
+
 
   window._saveConfig();
 };

@@ -69,7 +69,7 @@ var userscript = function () {
   window._getConfigAsync(
     function (config) {
       window.config = config;
-      window.config.tradeRate = window.config.tradeRate || [2.0, 1.5, 1.0];
+      window.config.tradeRate = window.config.tradeRate || [3.0, 2.0, 1.0];
       window._setConfigMyPlanets();
       window._parseResearchTab();
       window.uipp_parseEmpireData(false, function() {

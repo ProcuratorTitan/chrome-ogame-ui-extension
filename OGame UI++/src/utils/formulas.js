@@ -61,6 +61,16 @@ var costsFunctions = {
   solarplant: function (level) {
     return [75 * Math.pow(1.5, level), 30 * Math.pow(1.5, level), 0];
   },
+  metalStorage: function(level) {
+    return [1000 * Math.pow(2, level), 0, 0];
+  },
+  crystalStorage: function(level) {
+    return [1000 * Math.pow(2, level), 500 * Math.pow(2, level), 0];
+  },
+  deuteriumStorage: function(level) {
+    return [1000 * Math.pow(2, level), 1000 * Math.pow(2, level), 0];
+  },
+  
   // FUNZIONI ROCK
   lfbuildrock1: function (level) {
     // Meditation Enclave

@@ -247,48 +247,55 @@ window._addTabExpeditions = function _addTabExpeditions() {
       //}
       // Fleet
       else if (expe.data.flags && expe.data.flags.f) {
-        //console.log('[DEBUG] Fleet found (expe.data.flags.f) per expe index=', i, 'result=', expe.data.result);
+        // 1) Calcolo delle risorse equivalenti alle navi
         var fleetResources = _getFleetResources(expe.data.result);
+      
+        // 2) Mostro metallo / cristallo / deuterio (come già facevi tu)
         ['metal', 'crystal', 'deuterium'].forEach(function (res) {
-          content += '<div style="display:inline-block; width: 120px; overflow: visible; white-space: nowrap;">';
-          content +=
-            '<img src="' +
-            uipp_images.resources[res] +
-            '" style="height:28px; margin-right: 8px; vertical-align: -9px" /> ';
-          content +=
-            '<span style="color:' +
-            (fleetResources[res] ? 'white' : '#555') +
-            '">' +
-            window._num(fleetResources[res] || 0) +
-            '</span>';
+          content += '<div style="display:inline-block; width:120px; overflow:visible; white-space:nowrap;">';
+          content += '  <img src="' + uipp_images.resources[res] + '"';
+          content += '       style="height:28px; margin-right:8px; vertical-align:-9px" />';
+          content += '  <span style="color:' + (fleetResources[res] ? 'white' : '#555') + '">';
+          content +=        window._num(fleetResources[res] || 0);
+          content += '  </span>';
           content += '</div>';
+      
           expe.resources[res] += fleetResources[res] || 0;
         });
-        var tooltip = '<div id="tooltip-expe-' + expe.index + '" style="display:none">';
+      
+        // 3) Creo un contenitore flexbox per elencare le navi.
+        //    Usando "flex-wrap: wrap" e "overflow-x: visible", NON apparirà la scrollbar:
+        var shipsHtml = '<div style="margin-top:8px; display:flex; flex-wrap:wrap; overflow-x:visible; align-items:center;">';
+      
+        // Conteggio totale navi (come da codice originale)
         var nShips = 0;
-        for (var key2 in expe.data.result) {
-          if (uipp_images.ships[key2]) {
-            tooltip += '<div style="white-space: nowrap; min-width: 120px; line-height: 40px; font-size: 13px;">';
-            tooltip +=
-              '<img src="' + uipp_images.ships[key2] + '" style="height: 40px; margin-right: 8px; float: left" />';
-            tooltip += expe.data.result[key2];
-            nShips += expe.data.result[key2];
-            tooltip += '</div>';
+      
+        // 4) Ciclo sulle navi: ogni tipo di nave occupa un "box"
+        for (var key in expe.data.result) {
+          if (uipp_images.ships[key]) {
+            var numShips = expe.data.result[key];
+            nShips += numShips;
+      
+            shipsHtml += '<div style="flex:0 0 auto; margin:4px 10px 0 0; text-align:center;">';
+            shipsHtml += '  <img src="' + uipp_images.ships[key] + '"';
+            shipsHtml += '       style="height:40px; vertical-align:middle; margin-bottom:5px;" />';
+            shipsHtml += '  <div>' + numShips + '</div>'; // ad es. "5", "10"
+            shipsHtml += '</div>';
           }
         }
-        tooltip += '</div>';
-        content +=
-          '<div style="display:inline-block; float:right; margin-top: 6px;" class="tooltipRel tooltipClose tooltipRight js_hideTipOnMobile" rel="tooltip-expe-' +
-          expe.index +
-          '">';
-        content += nShips;
-        content +=
-          '<img src="' +
-          window.uipp_images.inflight +
-          '" style="transform:rotate(180deg); margin-left: 8px; vertical-align: -4px"/>';
+        shipsHtml += '</div>'; // Fine container flex
+      
+        // 5) Mantengo il totale navi in alto a destra, come prima
+        //    (Uguale al codice “perfetto” che avevi: nShips + icona rovesciata)
+        content += '<div style="display:inline-block; float:right; margin-top:6px;">';
+        content +=   nShips;
+        content += ' <img src="' + uipp_images.inflight + '"';
+        content += '      style="transform:rotate(180deg); margin-left:8px; vertical-align:-4px" />';
         content += '</div>';
-        content += tooltip;
-      }
+      
+        // 6) Aggiungo l’elenco navi subito dopo
+        content += shipsHtml;
+      }                   
       // Resources
       else if (expe.data.flags && expe.data.flags.r) {
         //console.log('[DEBUG] Resources (expe.data.flags.r) per expe index=', i, 'result=', expe.data.result);

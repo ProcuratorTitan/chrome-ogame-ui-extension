@@ -114,6 +114,10 @@ window.uipp_parseEmpireData = function uipp_parseEmpireData(force, cb) {
     config.ionTech = data[121];
     config.laserTech = data[120];
     config.plasmaTech = data[122];
+    config.researchTech = data[123];
+    config.weaponsTech = data[109];
+    config.shieldingTech = data[110];
+    config.armorTech = data[111];
     //console.log('Planet data updated for key:', key);
   }
 };
